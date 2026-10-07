@@ -9,7 +9,9 @@ from decouple import config
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-me')
-DEBUG = config('DEBUG', default=True, cast=bool)
+
+# Production da .env da DEBUG=False qo'yilishi SHART
+DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 
@@ -24,12 +26,15 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
+    'drf_spectacular',
     # Local
     'clinic',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # WhiteNoise — staticfiles production da serve qilish uchun (SecurityMiddleware dan keyin)
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -80,6 +85,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+# WhiteNoise — compressed & cached static files
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
@@ -98,14 +106,33 @@ REST_FRAMEWORK = {
     'DATETIME_FORMAT': '%Y-%m-%dT%H:%M:%S',
     'DATE_FORMAT': '%Y-%m-%d',
     'TIME_FORMAT': '%H:%M',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+# ─── drf-spectacular (Swagger / OpenAPI) ─────────────────────────────────────
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'DentFlow API',
+    'DESCRIPTION': (
+        "Stomatologiya klinikasi avtomatlashtirish tizimi uchun REST API.\n\n"
+        "Shifokorlar, xizmatlar, bemorlar, qabullar va statistika bilan ishlash."
+    ),
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SWAGGER_UI_SETTINGS': {
+        'persistAuthorization': True,
+        'displayRequestDuration': True,
+        'docExpansion': 'none',
+        'filter': True,
+    },
+    'SCHEMA_PATH_PREFIX': '/api/',
 }
 
 # ─── JWT ─────────────────────────────────────────────────────────────────────
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=8),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': False,
+    'ROTATE_REFRESH_TOKENS': False,   # Blacklist app o'rnatilmaganligi sababli False
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
@@ -118,10 +145,10 @@ CORS_ALLOW_CREDENTIALS = True
 
 # ─── Telegram Bot ────────────────────────────────────────────────────────────
 TELEGRAM_BOT_TOKEN = config('TELEGRAM_BOT_TOKEN', default='')
-WEBAPP_URL = config('WEBAPP_URL', default='http://localhost:5174')
+WEBAPP_URL  = config('WEBAPP_URL',  default='http://localhost:5174')
 WEBHOOK_URL = config('WEBHOOK_URL', default='')
 
 # ─── Klinika ma'lumotlari ────────────────────────────────────────────────────
-CLINIC_NAME = config('CLINIC_NAME', default='DentFlow Klinikasi')
+CLINIC_NAME    = config('CLINIC_NAME',    default='DentFlow Klinikasi')
 CLINIC_ADDRESS = config('CLINIC_ADDRESS', default='')
-CLINIC_PHONE = config('CLINIC_PHONE', default='')
+CLINIC_PHONE   = config('CLINIC_PHONE',   default='')

@@ -1,0 +1,2673 @@
+openapi: 3.0.3
+info:
+  title: DentFlow API
+  version: 1.0.0
+  description: |-
+    Stomatologiya klinikasi avtomatlashtirish tizimi uchun REST API.
+
+    Shifokorlar, xizmatlar, bemorlar, qabullar va statistika bilan ishlash.
+paths:
+  /api/appointments/:
+    get:
+      operationId: appointments_list
+      summary: Qabullar ro'yxati
+      parameters:
+      - in: query
+        name: date
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: doctor_id
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: patient_id
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - cancelled
+          - completed
+          - confirmed
+          - in_progress
+          - no_show
+          - pending
+      tags:
+      - Appointments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAppointmentListList'
+          description: ''
+    post:
+      operationId: appointments_create
+      summary: Yangi qabul yaratish
+      tags:
+      - Appointments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppointmentCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AppointmentCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AppointmentCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentCreate'
+          description: ''
+  /api/appointments/{id}/:
+    get:
+      operationId: appointments_retrieve
+      summary: Qabul tafsilotlari
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Qabul.
+        required: true
+      tags:
+      - Appointments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentDetail'
+          description: ''
+    put:
+      operationId: appointments_update
+      summary: Qabulni yangilash
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Qabul.
+        required: true
+      tags:
+      - Appointments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppointmentListRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AppointmentListRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AppointmentListRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentList'
+          description: ''
+    patch:
+      operationId: appointments_partial_update
+      summary: Qabulni qisman yangilash
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Qabul.
+        required: true
+      tags:
+      - Appointments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAppointmentListRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAppointmentListRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAppointmentListRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentList'
+          description: ''
+    delete:
+      operationId: appointments_destroy
+      summary: Qabulni o'chirish
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Qabul.
+        required: true
+      tags:
+      - Appointments
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/appointments/{id}/cancel/:
+    post:
+      operationId: appointments_cancel_create
+      description: Qabulni bekor qilish
+      summary: Qabulni bekor qilish
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Qabul.
+        required: true
+      tags:
+      - Appointments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CancelRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CancelRequestRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentList'
+          description: ''
+  /api/appointments/{id}/complete/:
+    post:
+      operationId: appointments_complete_create
+      description: Qabulni tugatadi. Agar kechikish bo'lsa, keyingi bemorlarga avtomatik
+        xabar yuboriladi.
+      summary: Qabulni tugatish
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Qabul.
+        required: true
+      tags:
+      - Appointments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentList'
+          description: ''
+  /api/appointments/{id}/confirm/:
+    post:
+      operationId: appointments_confirm_create
+      description: Qabulni tasdiqlash
+      summary: Qabulni tasdiqlash
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Qabul.
+        required: true
+      tags:
+      - Appointments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentList'
+          description: ''
+  /api/appointments/{id}/no-show/:
+    post:
+      operationId: appointments_no_show_create
+      description: Bemor kelmadi
+      summary: Bemor kelmadi deb belgilash
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Qabul.
+        required: true
+      tags:
+      - Appointments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentList'
+          description: ''
+  /api/appointments/{id}/start/:
+    post:
+      operationId: appointments_start_create
+      description: Shifokor qabulni boshlaydi — status `in_progress` ga o'tadi.
+      summary: Qabulni boshlash
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Qabul.
+        required: true
+      tags:
+      - Appointments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentList'
+          description: ''
+  /api/auth/login/:
+    post:
+      operationId: auth_login_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/auth/refresh/:
+    post:
+      operationId: auth_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/doctors/:
+    get:
+      operationId: doctors_list
+      summary: Shifokorlar ro'yxati
+      parameters:
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+        description: Faqat faol shifokorlar
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - Doctors
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDoctorListList'
+          description: ''
+    post:
+      operationId: doctors_create
+      summary: Yangi shifokor qo'shish
+      tags:
+      - Doctors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DoctorDetailRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DoctorDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DoctorDetailRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DoctorDetail'
+          description: ''
+  /api/doctors/{id}/:
+    get:
+      operationId: doctors_retrieve
+      summary: Shifokor tafsilotlari
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Shifokor.
+        required: true
+      tags:
+      - Doctors
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DoctorDetail'
+          description: ''
+    put:
+      operationId: doctors_update
+      summary: Shifokorni yangilash
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Shifokor.
+        required: true
+      tags:
+      - Doctors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DoctorDetailRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DoctorDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DoctorDetailRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DoctorDetail'
+          description: ''
+    patch:
+      operationId: doctors_partial_update
+      summary: Shifokorni qisman yangilash
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Shifokor.
+        required: true
+      tags:
+      - Doctors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDoctorDetailRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDoctorDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDoctorDetailRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DoctorDetail'
+          description: ''
+    delete:
+      operationId: doctors_destroy
+      summary: Shifokorni o'chirish
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Shifokor.
+        required: true
+      tags:
+      - Doctors
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/doctors/{id}/leaves/:
+    get:
+      operationId: doctors_leaves_retrieve
+      summary: Tatil kunlarini ko'rish/qo'shish
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Shifokor.
+        required: true
+      tags:
+      - Doctors
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DoctorDetail'
+          description: ''
+    post:
+      operationId: doctors_leaves_create
+      summary: Tatil kunlarini ko'rish/qo'shish
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Shifokor.
+        required: true
+      tags:
+      - Doctors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DoctorDetailRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DoctorDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DoctorDetailRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DoctorDetail'
+          description: ''
+  /api/doctors/{id}/leaves/{leave_id}/:
+    delete:
+      operationId: doctors_leaves_destroy
+      summary: Tatil kunini o'chirish
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Shifokor.
+        required: true
+      - in: path
+        name: leave_id
+        schema:
+          type: integer
+        description: Tatil kuni ID-si
+        required: true
+      tags:
+      - Doctors
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/doctors/{id}/slots/:
+    get:
+      operationId: doctors_slots_retrieve
+      description: Shifokorning ko'rsatilgan sanasidagi bo'sh vaqt slotlarini qaytaradi.
+      summary: Bo'sh vaqt slotlari
+      parameters:
+      - in: query
+        name: date
+        schema:
+          type: string
+          format: date
+        description: Sana (YYYY-MM-DD)
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Shifokor.
+        required: true
+      tags:
+      - Doctors
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SlotResponse'
+          description: ''
+  /api/patients/:
+    get:
+      operationId: patients_list
+      summary: Bemorlar ro'yxati
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Ism, familiya yoki telefon
+      tags:
+      - Patients
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPatientList'
+          description: ''
+    post:
+      operationId: patients_create
+      summary: Yangi bemor qo'shish
+      tags:
+      - Patients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatientRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatientRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatientRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patient'
+          description: ''
+  /api/patients/{id}/:
+    get:
+      operationId: patients_retrieve
+      summary: Bemor tafsilotlari
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Bemor.
+        required: true
+      tags:
+      - Patients
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patient'
+          description: ''
+    put:
+      operationId: patients_update
+      summary: Bemorni yangilash
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Bemor.
+        required: true
+      tags:
+      - Patients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatientRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatientRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatientRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patient'
+          description: ''
+    patch:
+      operationId: patients_partial_update
+      summary: Bemorni qisman yangilash
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Bemor.
+        required: true
+      tags:
+      - Patients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPatientRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPatientRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPatientRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patient'
+          description: ''
+    delete:
+      operationId: patients_destroy
+      summary: Bemorni o'chirish
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Bemor.
+        required: true
+      tags:
+      - Patients
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/patients/{id}/appointments/:
+    get:
+      operationId: patients_appointments_list
+      description: Bemor qabullari tarixi
+      summary: Bemor qabullari tarixi
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Bemor.
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - Patients
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAppointmentListList'
+          description: ''
+  /api/service-categories/:
+    get:
+      operationId: service_categories_list
+      summary: Kategoriyalar ro'yxati
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - Services
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedServiceCategoryList'
+          description: ''
+    post:
+      operationId: service_categories_create
+      summary: Kategoriya qo'shish
+      tags:
+      - Services
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceCategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ServiceCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ServiceCategoryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceCategory'
+          description: ''
+  /api/service-categories/{id}/:
+    get:
+      operationId: service_categories_retrieve
+      summary: Kategoriya tafsilotlari
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Kategoriya.
+        required: true
+      tags:
+      - Services
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceCategory'
+          description: ''
+    put:
+      operationId: service_categories_update
+      summary: Kategoriyani yangilash
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Kategoriya.
+        required: true
+      tags:
+      - Services
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceCategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ServiceCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ServiceCategoryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceCategory'
+          description: ''
+    patch:
+      operationId: service_categories_partial_update
+      summary: Kategoriyani qisman yangilash
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Kategoriya.
+        required: true
+      tags:
+      - Services
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedServiceCategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedServiceCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedServiceCategoryRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceCategory'
+          description: ''
+    delete:
+      operationId: service_categories_destroy
+      summary: Kategoriyani o'chirish
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Kategoriya.
+        required: true
+      tags:
+      - Services
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/services/:
+    get:
+      operationId: services_list
+      summary: Xizmatlar ro'yxati
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: integer
+      - in: query
+        name: doctor_id
+        schema:
+          type: integer
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - Services
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedServiceListList'
+          description: ''
+    post:
+      operationId: services_create
+      summary: Yangi xizmat qo'shish
+      tags:
+      - Services
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceListRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ServiceListRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ServiceListRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceList'
+          description: ''
+  /api/services/{id}/:
+    get:
+      operationId: services_retrieve
+      summary: Xizmat tafsilotlari
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Xizmat.
+        required: true
+      tags:
+      - Services
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceDetail'
+          description: ''
+    put:
+      operationId: services_update
+      summary: Xizmatni yangilash
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Xizmat.
+        required: true
+      tags:
+      - Services
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceListRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ServiceListRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ServiceListRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceList'
+          description: ''
+    patch:
+      operationId: services_partial_update
+      summary: Xizmatni qisman yangilash
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Xizmat.
+        required: true
+      tags:
+      - Services
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedServiceListRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedServiceListRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedServiceListRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceList'
+          description: ''
+    delete:
+      operationId: services_destroy
+      summary: Xizmatni o'chirish
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Xizmat.
+        required: true
+      tags:
+      - Services
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/settings/:
+    get:
+      operationId: settings_retrieve
+      summary: Klinika sozlamalarini ko'rish
+      tags:
+      - Settings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClinicSettings'
+          description: ''
+    put:
+      operationId: settings_update
+      summary: Klinika sozlamalarini yangilash
+      tags:
+      - Settings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClinicSettingsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ClinicSettingsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClinicSettingsRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClinicSettings'
+          description: ''
+    patch:
+      operationId: settings_partial_update
+      summary: Klinika sozlamalarini qisman yangilash
+      tags:
+      - Settings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedClinicSettingsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedClinicSettingsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedClinicSettingsRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClinicSettings'
+          description: ''
+  /api/stats/dashboard/:
+    get:
+      operationId: stats_dashboard_retrieve
+      description: Bugungi, haftalik va oylik qabullar soni, daromad, so'nggi qabullar.
+      summary: Dashboard statistikasi
+      tags:
+      - Stats
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardStats'
+          description: ''
+  /api/stats/revenue/:
+    get:
+      operationId: stats_revenue_retrieve
+      description: Kunlik daromad, top shifokorlar va top xizmatlar.
+      summary: Daromad statistikasi
+      parameters:
+      - in: query
+        name: period
+        schema:
+          type: string
+          enum:
+          - month
+          - week
+          - year
+        description: 'Davr: week | month | year'
+      tags:
+      - Stats
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevenueStats'
+          description: ''
+components:
+  schemas:
+    AppointmentCreate:
+      type: object
+      properties:
+        patient:
+          type: integer
+        doctor:
+          type: integer
+        service:
+          type: integer
+          nullable: true
+        date:
+          type: string
+          format: date
+          title: Sana
+        start_time:
+          type: string
+          format: time
+          title: Boshlanish vaqti
+        notes:
+          type: string
+          title: Izoh
+      required:
+      - date
+      - doctor
+      - patient
+      - start_time
+    AppointmentCreateRequest:
+      type: object
+      properties:
+        patient:
+          type: integer
+        doctor:
+          type: integer
+        service:
+          type: integer
+          nullable: true
+        date:
+          type: string
+          format: date
+          title: Sana
+        start_time:
+          type: string
+          format: time
+          title: Boshlanish vaqti
+        notes:
+          type: string
+          title: Izoh
+      required:
+      - date
+      - doctor
+      - patient
+      - start_time
+    AppointmentDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        patient:
+          allOf:
+          - $ref: '#/components/schemas/Patient'
+          readOnly: true
+        doctor:
+          allOf:
+          - $ref: '#/components/schemas/DoctorList'
+          readOnly: true
+        service:
+          allOf:
+          - $ref: '#/components/schemas/ServiceList'
+          readOnly: true
+        status_display:
+          type: string
+          readOnly: true
+        delay_minutes:
+          type: integer
+          readOnly: true
+        date:
+          type: string
+          format: date
+          title: Sana
+        start_time:
+          type: string
+          format: time
+          title: Boshlanish vaqti
+        end_time:
+          type: string
+          format: time
+          title: Tugash vaqti
+        actual_start:
+          type: string
+          format: date-time
+          nullable: true
+          title: Haqiqiy boshlanish
+        actual_end:
+          type: string
+          format: date-time
+          nullable: true
+          title: Haqiqiy tugash
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          title: Holat
+        notes:
+          type: string
+          title: Izoh
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,0})?$
+          nullable: true
+          title: Narx
+        reminder_24h_sent:
+          type: boolean
+        reminder_1h_sent:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - date
+      - delay_minutes
+      - doctor
+      - end_time
+      - id
+      - patient
+      - service
+      - start_time
+      - status_display
+      - updated_at
+    AppointmentList:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        patient:
+          type: integer
+        patient_name:
+          type: string
+          readOnly: true
+        patient_phone:
+          type: string
+          readOnly: true
+        doctor:
+          type: integer
+        doctor_name:
+          type: string
+          readOnly: true
+        service:
+          type: integer
+          nullable: true
+        service_name:
+          type: string
+          readOnly: true
+        date:
+          type: string
+          format: date
+          title: Sana
+        start_time:
+          type: string
+          format: time
+          title: Boshlanish vaqti
+        end_time:
+          type: string
+          format: time
+          title: Tugash vaqti
+        actual_start:
+          type: string
+          format: date-time
+          nullable: true
+          title: Haqiqiy boshlanish
+        actual_end:
+          type: string
+          format: date-time
+          nullable: true
+          title: Haqiqiy tugash
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          title: Holat
+        status_display:
+          type: string
+          readOnly: true
+        notes:
+          type: string
+          title: Izoh
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,0})?$
+          nullable: true
+          title: Narx
+        delay_minutes:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - date
+      - delay_minutes
+      - doctor
+      - doctor_name
+      - end_time
+      - id
+      - patient
+      - patient_name
+      - patient_phone
+      - service_name
+      - start_time
+      - status_display
+      - updated_at
+    AppointmentListRequest:
+      type: object
+      properties:
+        patient:
+          type: integer
+        doctor:
+          type: integer
+        service:
+          type: integer
+          nullable: true
+        date:
+          type: string
+          format: date
+          title: Sana
+        start_time:
+          type: string
+          format: time
+          title: Boshlanish vaqti
+        end_time:
+          type: string
+          format: time
+          title: Tugash vaqti
+        actual_start:
+          type: string
+          format: date-time
+          nullable: true
+          title: Haqiqiy boshlanish
+        actual_end:
+          type: string
+          format: date-time
+          nullable: true
+          title: Haqiqiy tugash
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          title: Holat
+        notes:
+          type: string
+          title: Izoh
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,0})?$
+          nullable: true
+          title: Narx
+      required:
+      - date
+      - doctor
+      - end_time
+      - patient
+      - start_time
+    CancelRequestRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+    ClinicSettings:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          title: Klinika nomi
+          maxLength: 200
+        address:
+          type: string
+          title: Manzil
+          maxLength: 500
+        phone:
+          type: string
+          title: Telefon
+          maxLength: 50
+        telegram_bot_token:
+          type: string
+          maxLength: 200
+        work_start:
+          type: string
+          format: time
+          title: Ish vaqti boshlanishi
+        work_end:
+          type: string
+          format: time
+          title: Ish vaqti tugashi
+        reminder_24h:
+          type: boolean
+          title: 24 soat eslatma
+        reminder_1h:
+          type: boolean
+          title: 1 soat eslatma
+        reminder_24h_template:
+          type: string
+          title: Shablон (24h)
+        reminder_1h_template:
+          type: string
+          title: Shablon (1h)
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - updated_at
+    ClinicSettingsRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Klinika nomi
+          maxLength: 200
+        address:
+          type: string
+          title: Manzil
+          maxLength: 500
+        phone:
+          type: string
+          title: Telefon
+          maxLength: 50
+        telegram_bot_token:
+          type: string
+          maxLength: 200
+        work_start:
+          type: string
+          format: time
+          title: Ish vaqti boshlanishi
+        work_end:
+          type: string
+          format: time
+          title: Ish vaqti tugashi
+        reminder_24h:
+          type: boolean
+          title: 24 soat eslatma
+        reminder_1h:
+          type: boolean
+          title: 1 soat eslatma
+        reminder_24h_template:
+          type: string
+          minLength: 1
+          title: Shablон (24h)
+        reminder_1h_template:
+          type: string
+          minLength: 1
+          title: Shablon (1h)
+    DailyRevenue:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        revenue:
+          type: number
+          format: double
+        appointments:
+          type: integer
+      required:
+      - appointments
+      - date
+      - revenue
+    DashboardStats:
+      type: object
+      properties:
+        today_appointments:
+          type: integer
+        today_completed:
+          type: integer
+        today_cancelled:
+          type: integer
+        today_revenue:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,0})?$
+        week_appointments:
+          type: integer
+        week_revenue:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,0})?$
+        month_appointments:
+          type: integer
+        month_revenue:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,0})?$
+        total_patients:
+          type: integer
+        active_doctors:
+          type: integer
+        recent_appointments:
+          type: array
+          items:
+            $ref: '#/components/schemas/AppointmentList'
+      required:
+      - active_doctors
+      - month_appointments
+      - month_revenue
+      - recent_appointments
+      - today_appointments
+      - today_cancelled
+      - today_completed
+      - today_revenue
+      - total_patients
+      - week_appointments
+      - week_revenue
+    DoctorDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        first_name:
+          type: string
+          title: Ism
+          maxLength: 100
+        last_name:
+          type: string
+          title: Familiya
+          maxLength: 100
+        full_name:
+          type: string
+          readOnly: true
+        speciality:
+          type: string
+          title: Mutaxassislik
+          maxLength: 200
+        phone:
+          type: string
+          title: Telefon
+          maxLength: 20
+        telegram_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        photo:
+          type: string
+          format: uri
+          nullable: true
+          title: Rasm
+        slot_duration:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          title: Qabul davomiyligi (daqiqa)
+        work_start:
+          type: string
+          format: time
+          title: Ish boshlanishi
+        work_end:
+          type: string
+          format: time
+          title: Ish tugashi
+        break_start:
+          type: string
+          format: time
+          nullable: true
+          title: Tanaffus boshlanishi
+        break_end:
+          type: string
+          format: time
+          nullable: true
+          title: Tanaffus tugashi
+        work_days:
+          title: Ish kunlari
+        is_active:
+          type: boolean
+          title: Faol
+        services:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceList'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Yaratilgan
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Yangilangan
+      required:
+      - created_at
+      - first_name
+      - full_name
+      - id
+      - last_name
+      - services
+      - updated_at
+    DoctorDetailRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+          minLength: 1
+          title: Ism
+          maxLength: 100
+        last_name:
+          type: string
+          minLength: 1
+          title: Familiya
+          maxLength: 100
+        speciality:
+          type: string
+          minLength: 1
+          title: Mutaxassislik
+          maxLength: 200
+        phone:
+          type: string
+          title: Telefon
+          maxLength: 20
+        telegram_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        photo:
+          type: string
+          format: binary
+          nullable: true
+          title: Rasm
+        slot_duration:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          title: Qabul davomiyligi (daqiqa)
+        work_start:
+          type: string
+          format: time
+          title: Ish boshlanishi
+        work_end:
+          type: string
+          format: time
+          title: Ish tugashi
+        break_start:
+          type: string
+          format: time
+          nullable: true
+          title: Tanaffus boshlanishi
+        break_end:
+          type: string
+          format: time
+          nullable: true
+          title: Tanaffus tugashi
+        work_days:
+          title: Ish kunlari
+        is_active:
+          type: boolean
+          title: Faol
+        service_ids:
+          type: array
+          items:
+            type: integer
+            writeOnly: true
+          writeOnly: true
+      required:
+      - first_name
+      - last_name
+    DoctorList:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        first_name:
+          type: string
+          title: Ism
+          maxLength: 100
+        last_name:
+          type: string
+          title: Familiya
+          maxLength: 100
+        full_name:
+          type: string
+          readOnly: true
+        speciality:
+          type: string
+          title: Mutaxassislik
+          maxLength: 200
+        phone:
+          type: string
+          title: Telefon
+          maxLength: 20
+        telegram_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        photo:
+          type: string
+          format: uri
+          nullable: true
+          title: Rasm
+        slot_duration:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          title: Qabul davomiyligi (daqiqa)
+        work_start:
+          type: string
+          format: time
+          title: Ish boshlanishi
+        work_end:
+          type: string
+          format: time
+          title: Ish tugashi
+        break_start:
+          type: string
+          format: time
+          nullable: true
+          title: Tanaffus boshlanishi
+        break_end:
+          type: string
+          format: time
+          nullable: true
+          title: Tanaffus tugashi
+        work_days:
+          title: Ish kunlari
+        is_active:
+          type: boolean
+          title: Faol
+        services:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceList'
+          readOnly: true
+        today_appointments:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Yaratilgan
+      required:
+      - created_at
+      - first_name
+      - full_name
+      - id
+      - last_name
+      - services
+      - today_appointments
+    PaginatedAppointmentListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AppointmentList'
+    PaginatedDoctorListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DoctorList'
+    PaginatedPatientList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Patient'
+    PaginatedServiceCategoryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceCategory'
+    PaginatedServiceListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceList'
+    PatchedAppointmentListRequest:
+      type: object
+      properties:
+        patient:
+          type: integer
+        doctor:
+          type: integer
+        service:
+          type: integer
+          nullable: true
+        date:
+          type: string
+          format: date
+          title: Sana
+        start_time:
+          type: string
+          format: time
+          title: Boshlanish vaqti
+        end_time:
+          type: string
+          format: time
+          title: Tugash vaqti
+        actual_start:
+          type: string
+          format: date-time
+          nullable: true
+          title: Haqiqiy boshlanish
+        actual_end:
+          type: string
+          format: date-time
+          nullable: true
+          title: Haqiqiy tugash
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          title: Holat
+        notes:
+          type: string
+          title: Izoh
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,0})?$
+          nullable: true
+          title: Narx
+    PatchedClinicSettingsRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Klinika nomi
+          maxLength: 200
+        address:
+          type: string
+          title: Manzil
+          maxLength: 500
+        phone:
+          type: string
+          title: Telefon
+          maxLength: 50
+        telegram_bot_token:
+          type: string
+          maxLength: 200
+        work_start:
+          type: string
+          format: time
+          title: Ish vaqti boshlanishi
+        work_end:
+          type: string
+          format: time
+          title: Ish vaqti tugashi
+        reminder_24h:
+          type: boolean
+          title: 24 soat eslatma
+        reminder_1h:
+          type: boolean
+          title: 1 soat eslatma
+        reminder_24h_template:
+          type: string
+          minLength: 1
+          title: Shablон (24h)
+        reminder_1h_template:
+          type: string
+          minLength: 1
+          title: Shablon (1h)
+    PatchedDoctorDetailRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+          minLength: 1
+          title: Ism
+          maxLength: 100
+        last_name:
+          type: string
+          minLength: 1
+          title: Familiya
+          maxLength: 100
+        speciality:
+          type: string
+          minLength: 1
+          title: Mutaxassislik
+          maxLength: 200
+        phone:
+          type: string
+          title: Telefon
+          maxLength: 20
+        telegram_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        photo:
+          type: string
+          format: binary
+          nullable: true
+          title: Rasm
+        slot_duration:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          title: Qabul davomiyligi (daqiqa)
+        work_start:
+          type: string
+          format: time
+          title: Ish boshlanishi
+        work_end:
+          type: string
+          format: time
+          title: Ish tugashi
+        break_start:
+          type: string
+          format: time
+          nullable: true
+          title: Tanaffus boshlanishi
+        break_end:
+          type: string
+          format: time
+          nullable: true
+          title: Tanaffus tugashi
+        work_days:
+          title: Ish kunlari
+        is_active:
+          type: boolean
+          title: Faol
+        service_ids:
+          type: array
+          items:
+            type: integer
+            writeOnly: true
+          writeOnly: true
+    PatchedPatientRequest:
+      type: object
+      properties:
+        telegram_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        first_name:
+          type: string
+          minLength: 1
+          title: Ism
+          maxLength: 100
+        last_name:
+          type: string
+          title: Familiya
+          maxLength: 100
+        phone:
+          type: string
+          title: Telefon
+          maxLength: 20
+        notes:
+          type: string
+          title: Eslatmalar
+    PatchedServiceCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Nomi
+          maxLength: 100
+        icon:
+          type: string
+          minLength: 1
+          title: Ikonka (emoji)
+          maxLength: 10
+        order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          title: Tartib
+    PatchedServiceListRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Nomi (UZ)
+          maxLength: 200
+        name_ru:
+          type: string
+          title: Nomi (RU)
+          maxLength: 200
+        description:
+          type: string
+          title: Tavsif
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,0})?$
+          title: Narxi (so'm)
+        duration:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          title: Davomiyligi (daqiqa)
+        category:
+          type: integer
+          nullable: true
+        is_active:
+          type: boolean
+          title: Faol
+    Patient:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        telegram_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        first_name:
+          type: string
+          title: Ism
+          maxLength: 100
+        last_name:
+          type: string
+          title: Familiya
+          maxLength: 100
+        full_name:
+          type: string
+          readOnly: true
+        phone:
+          type: string
+          title: Telefon
+          maxLength: 20
+        notes:
+          type: string
+          title: Eslatmalar
+        visit_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Ro'ylxatga olingan
+      required:
+      - created_at
+      - first_name
+      - full_name
+      - id
+      - visit_count
+    PatientRequest:
+      type: object
+      properties:
+        telegram_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        first_name:
+          type: string
+          minLength: 1
+          title: Ism
+          maxLength: 100
+        last_name:
+          type: string
+          title: Familiya
+          maxLength: 100
+        phone:
+          type: string
+          title: Telefon
+          maxLength: 20
+        notes:
+          type: string
+          title: Eslatmalar
+      required:
+      - first_name
+    RevenueStats:
+      type: object
+      properties:
+        period:
+          type: string
+        daily:
+          type: array
+          items:
+            $ref: '#/components/schemas/DailyRevenue'
+        top_doctors:
+          type: array
+          items:
+            $ref: '#/components/schemas/TopDoctor'
+        top_services:
+          type: array
+          items:
+            $ref: '#/components/schemas/TopService'
+      required:
+      - daily
+      - period
+      - top_doctors
+      - top_services
+    ServiceCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          title: Nomi
+          maxLength: 100
+        icon:
+          type: string
+          title: Ikonka (emoji)
+          maxLength: 10
+        order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          title: Tartib
+      required:
+      - id
+      - name
+    ServiceCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Nomi
+          maxLength: 100
+        icon:
+          type: string
+          minLength: 1
+          title: Ikonka (emoji)
+          maxLength: 10
+        order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          title: Tartib
+      required:
+      - name
+    ServiceDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          title: Nomi (UZ)
+          maxLength: 200
+        name_ru:
+          type: string
+          title: Nomi (RU)
+          maxLength: 200
+        description:
+          type: string
+          title: Tavsif
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,0})?$
+          title: Narxi (so'm)
+        price_formatted:
+          type: string
+          readOnly: true
+        duration:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          title: Davomiyligi (daqiqa)
+        category:
+          type: integer
+          nullable: true
+        category_name:
+          type: string
+          readOnly: true
+        doctors:
+          type: array
+          items:
+            type: integer
+        is_active:
+          type: boolean
+          title: Faol
+      required:
+      - category_name
+      - id
+      - name
+      - price
+      - price_formatted
+    ServiceList:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          title: Nomi (UZ)
+          maxLength: 200
+        name_ru:
+          type: string
+          title: Nomi (RU)
+          maxLength: 200
+        description:
+          type: string
+          title: Tavsif
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,0})?$
+          title: Narxi (so'm)
+        price_formatted:
+          type: string
+          readOnly: true
+        duration:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          title: Davomiyligi (daqiqa)
+        category:
+          type: integer
+          nullable: true
+        category_name:
+          type: string
+          readOnly: true
+        is_active:
+          type: boolean
+          title: Faol
+      required:
+      - category_name
+      - id
+      - name
+      - price
+      - price_formatted
+    ServiceListRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Nomi (UZ)
+          maxLength: 200
+        name_ru:
+          type: string
+          title: Nomi (RU)
+          maxLength: 200
+        description:
+          type: string
+          title: Tavsif
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,0})?$
+          title: Narxi (so'm)
+        duration:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          title: Davomiyligi (daqiqa)
+        category:
+          type: integer
+          nullable: true
+        is_active:
+          type: boolean
+          title: Faol
+      required:
+      - name
+      - price
+    Slot:
+      type: object
+      description: Bo'sh vaqt sloti
+      properties:
+        time:
+          type: string
+          format: time
+        is_available:
+          type: boolean
+        appointment_id:
+          type: integer
+          nullable: true
+      required:
+      - appointment_id
+      - is_available
+      - time
+    SlotResponse:
+      type: object
+      description: GET /doctors/{id}/slots/ javobi
+      properties:
+        slots:
+          type: array
+          items:
+            $ref: '#/components/schemas/Slot'
+        message:
+          type: string
+      required:
+      - slots
+    StatusEnum:
+      enum:
+      - pending
+      - confirmed
+      - in_progress
+      - completed
+      - cancelled
+      - rescheduled
+      - no_show
+      type: string
+      description: |-
+        * `pending` - Kutilmoqda
+        * `confirmed` - Tasdiqlangan
+        * `in_progress` - Jarayonda
+        * `completed` - Tugagan
+        * `cancelled` - Bekor qilingan
+        * `rescheduled` - Ko'chirilgan
+        * `no_show` - Kelmadi
+    TokenObtainPair:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - refresh
+    TokenObtainPairRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - password
+      - username
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    TopDoctor:
+      type: object
+      properties:
+        doctor__id:
+          type: integer
+        doctor__first_name:
+          type: string
+        doctor__last_name:
+          type: string
+        revenue:
+          type: number
+          format: double
+        count:
+          type: integer
+      required:
+      - count
+      - doctor__first_name
+      - doctor__id
+      - doctor__last_name
+      - revenue
+    TopService:
+      type: object
+      properties:
+        service__id:
+          type: integer
+        service__name:
+          type: string
+        revenue:
+          type: number
+          format: double
+        count:
+          type: integer
+      required:
+      - count
+      - revenue
+      - service__id
+      - service__name
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

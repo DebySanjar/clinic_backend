@@ -2,21 +2,24 @@
 DentFlow — DRF Views
 """
 
-import json
 import asyncio
 from datetime import datetime, timedelta, date, time
 from decimal import Decimal
 
 from django.utils import timezone
 from django.db.models import Sum, Count, Q
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
 
-from rest_framework import viewsets, status, generics
+from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from drf_spectacular.utils import (
+    extend_schema, extend_schema_view,
+    OpenApiParameter, OpenApiExample,
+)
+from drf_spectacular.types import OpenApiTypes
 
 from .models import (
     Doctor, DoctorLeave, ServiceCategory, Service,
@@ -27,7 +30,9 @@ from .serializers import (
     ServiceCategorySerializer, ServiceListSerializer, ServiceDetailSerializer,
     PatientSerializer, AppointmentListSerializer, AppointmentCreateSerializer,
     AppointmentDetailSerializer, ReminderLogSerializer,
-    ClinicSettingsSerializer, DashboardStatsSerializer, SlotSerializer
+    ClinicSettingsSerializer, DashboardStatsSerializer,
+    SlotSerializer, SlotResponseSerializer,
+    RevenueStatsSerializer, CancelRequestSerializer,
 )
 
 
@@ -83,6 +88,23 @@ def generate_slots(doctor: Doctor, target_date: date) -> list:
 
 # ─── Doctor ViewSet ───────────────────────────────────────────────────────────
 
+# ─── Doctor ViewSet ───────────────────────────────────────────────────────────
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="Shifokorlar ro'yxati",
+        parameters=[
+            OpenApiParameter('is_active', OpenApiTypes.BOOL, OpenApiParameter.QUERY,
+                             description='Faqat faol shifokorlar', required=False)
+        ],
+        tags=['Doctors'],
+    ),
+    retrieve=extend_schema(summary="Shifokor tafsilotlari", tags=['Doctors']),
+    create=extend_schema(summary="Yangi shifokor qo'shish", tags=['Doctors']),
+    update=extend_schema(summary="Shifokorni yangilash", tags=['Doctors']),
+    partial_update=extend_schema(summary="Shifokorni qisman yangilash", tags=['Doctors']),
+    destroy=extend_schema(summary="Shifokorni o'chirish", tags=['Doctors']),
+)
 class DoctorViewSet(viewsets.ModelViewSet):
     queryset = Doctor.objects.filter(is_active=True).prefetch_related('services')
     permission_classes = [IsAuthenticated]
@@ -99,6 +121,18 @@ class DoctorViewSet(viewsets.ModelViewSet):
             qs = qs.filter(is_active=is_active.lower() == 'true')
         return qs
 
+    @extend_schema(
+        summary="Bo'sh vaqt slotlari",
+        description="Shifokorning ko'rsatilgan sanasidagi bo'sh vaqt slotlarini qaytaradi.",
+        parameters=[
+            OpenApiParameter(
+                name='date', location=OpenApiParameter.QUERY,
+                description='Sana (YYYY-MM-DD)', required=True, type=OpenApiTypes.DATE,
+            )
+        ],
+        responses={200: SlotResponseSerializer},
+        tags=['Doctors'],
+    )
     @action(detail=True, methods=['get'], url_path='slots')
     def slots(self, request, pk=None):
         """Shifokor uchun bo'sh vaqt slotlari"""
@@ -132,6 +166,10 @@ class DoctorViewSet(viewsets.ModelViewSet):
         serializer = SlotSerializer(slots, many=True)
         return Response({'slots': serializer.data})
 
+    @extend_schema(
+        summary="Tatil kunlarini ko'rish/qo'shish",
+        tags=['Doctors'],
+    )
     @action(detail=True, methods=['get', 'post'], url_path='leaves')
     def leaves(self, request, pk=None):
         doctor = self.get_object()
@@ -148,6 +186,14 @@ class DoctorViewSet(viewsets.ModelViewSet):
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        summary="Tatil kunini o'chirish",
+        parameters=[
+            OpenApiParameter('leave_id', OpenApiTypes.INT, OpenApiParameter.PATH,
+                             description="Tatil kuni ID-si"),
+        ],
+        tags=['Doctors'],
+    )
     @action(detail=True, methods=['delete'], url_path='leaves/(?P<leave_id>[^/.]+)')
     def delete_leave(self, request, pk=None, leave_id=None):
         doctor = self.get_object()
@@ -161,6 +207,16 @@ class DoctorViewSet(viewsets.ModelViewSet):
 
 # ─── Service Category ViewSet ─────────────────────────────────────────────────
 
+# ─── Service Category ViewSet ─────────────────────────────────────────────────
+
+@extend_schema_view(
+    list=extend_schema(summary="Kategoriyalar ro'yxati", tags=['Services']),
+    retrieve=extend_schema(summary="Kategoriya tafsilotlari", tags=['Services']),
+    create=extend_schema(summary="Kategoriya qo'shish", tags=['Services']),
+    update=extend_schema(summary="Kategoriyani yangilash", tags=['Services']),
+    partial_update=extend_schema(summary="Kategoriyani qisman yangilash", tags=['Services']),
+    destroy=extend_schema(summary="Kategoriyani o'chirish", tags=['Services']),
+)
 class ServiceCategoryViewSet(viewsets.ModelViewSet):
     queryset = ServiceCategory.objects.all()
     serializer_class = ServiceCategorySerializer
@@ -169,6 +225,24 @@ class ServiceCategoryViewSet(viewsets.ModelViewSet):
 
 # ─── Service ViewSet ──────────────────────────────────────────────────────────
 
+# ─── Service ViewSet ──────────────────────────────────────────────────────────
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="Xizmatlar ro'yxati",
+        parameters=[
+            OpenApiParameter('is_active', OpenApiTypes.BOOL, OpenApiParameter.QUERY, required=False),
+            OpenApiParameter('doctor_id', OpenApiTypes.INT,  OpenApiParameter.QUERY, required=False),
+            OpenApiParameter('category',  OpenApiTypes.INT,  OpenApiParameter.QUERY, required=False),
+        ],
+        tags=['Services'],
+    ),
+    retrieve=extend_schema(summary="Xizmat tafsilotlari", tags=['Services']),
+    create=extend_schema(summary="Yangi xizmat qo'shish", tags=['Services']),
+    update=extend_schema(summary="Xizmatni yangilash", tags=['Services']),
+    partial_update=extend_schema(summary="Xizmatni qisman yangilash", tags=['Services']),
+    destroy=extend_schema(summary="Xizmatni o'chirish", tags=['Services']),
+)
 class ServiceViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
@@ -194,6 +268,23 @@ class ServiceViewSet(viewsets.ModelViewSet):
 
 # ─── Patient ViewSet ──────────────────────────────────────────────────────────
 
+# ─── Patient ViewSet ──────────────────────────────────────────────────────────
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="Bemorlar ro'yxati",
+        parameters=[
+            OpenApiParameter('search', OpenApiTypes.STR, OpenApiParameter.QUERY,
+                             description='Ism, familiya yoki telefon', required=False),
+        ],
+        tags=['Patients'],
+    ),
+    retrieve=extend_schema(summary="Bemor tafsilotlari", tags=['Patients']),
+    create=extend_schema(summary="Yangi bemor qo'shish", tags=['Patients']),
+    update=extend_schema(summary="Bemorni yangilash", tags=['Patients']),
+    partial_update=extend_schema(summary="Bemorni qisman yangilash", tags=['Patients']),
+    destroy=extend_schema(summary="Bemorni o'chirish", tags=['Patients']),
+)
 class PatientViewSet(viewsets.ModelViewSet):
     serializer_class = PatientSerializer
     permission_classes = [IsAuthenticated]
@@ -209,6 +300,11 @@ class PatientViewSet(viewsets.ModelViewSet):
             )
         return qs
 
+    @extend_schema(
+        summary="Bemor qabullari tarixi",
+        responses={200: AppointmentListSerializer(many=True)},
+        tags=['Patients'],
+    )
     @action(detail=True, methods=['get'])
     def appointments(self, request, pk=None):
         """Bemor qabullari tarixi"""
@@ -222,6 +318,28 @@ class PatientViewSet(viewsets.ModelViewSet):
 
 # ─── Appointment ViewSet ──────────────────────────────────────────────────────
 
+# ─── Appointment ViewSet ──────────────────────────────────────────────────────
+
+@extend_schema_view(
+    list=extend_schema(
+        summary="Qabullar ro'yxati",
+        parameters=[
+            OpenApiParameter('date',       OpenApiTypes.DATE, OpenApiParameter.QUERY, required=False),
+            OpenApiParameter('doctor_id',  OpenApiTypes.INT,  OpenApiParameter.QUERY, required=False),
+            OpenApiParameter('patient_id', OpenApiTypes.INT,  OpenApiParameter.QUERY, required=False),
+            OpenApiParameter('status',     OpenApiTypes.STR,  OpenApiParameter.QUERY, required=False,
+                             enum=['pending','confirmed','in_progress','completed','cancelled','no_show']),
+            OpenApiParameter('date_from',  OpenApiTypes.DATE, OpenApiParameter.QUERY, required=False),
+            OpenApiParameter('date_to',    OpenApiTypes.DATE, OpenApiParameter.QUERY, required=False),
+        ],
+        tags=['Appointments'],
+    ),
+    retrieve=extend_schema(summary="Qabul tafsilotlari", tags=['Appointments']),
+    create=extend_schema(summary="Yangi qabul yaratish", tags=['Appointments']),
+    update=extend_schema(summary="Qabulni yangilash", tags=['Appointments']),
+    partial_update=extend_schema(summary="Qabulni qisman yangilash", tags=['Appointments']),
+    destroy=extend_schema(summary="Qabulni o'chirish", tags=['Appointments']),
+)
 class AppointmentViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
@@ -267,6 +385,13 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         output = AppointmentListSerializer(appointment)
         return Response(output.data, status=status.HTTP_201_CREATED)
 
+    @extend_schema(
+        summary="Qabulni boshlash",
+        description="Shifokor qabulni boshlaydi — status `in_progress` ga o'tadi.",
+        request=None,
+        responses={200: AppointmentListSerializer},
+        tags=['Appointments'],
+    )
     @action(detail=True, methods=['post'], url_path='start')
     def start_appointment(self, request, pk=None):
         """Qabulni boshlash (shifokor)"""
@@ -281,6 +406,13 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         appointment.save()
         return Response(AppointmentListSerializer(appointment).data)
 
+    @extend_schema(
+        summary="Qabulni tugatish",
+        description="Qabulni tugatadi. Agar kechikish bo'lsa, keyingi bemorlarga avtomatik xabar yuboriladi.",
+        request=None,
+        responses={200: AppointmentListSerializer},
+        tags=['Appointments'],
+    )
     @action(detail=True, methods=['post'], url_path='complete')
     def complete_appointment(self, request, pk=None):
         """Qabulni tugatish — keyingi bemorlarga delay xabar yuborish"""
@@ -305,6 +437,12 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             'delay_minutes': delay
         })
 
+    @extend_schema(
+        summary="Qabulni bekor qilish",
+        request=CancelRequestSerializer,
+        responses={200: AppointmentListSerializer},
+        tags=['Appointments'],
+    )
     @action(detail=True, methods=['post'], url_path='cancel')
     def cancel_appointment(self, request, pk=None):
         """Qabulni bekor qilish"""
@@ -321,6 +459,12 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         appointment.save()
         return Response(AppointmentListSerializer(appointment).data)
 
+    @extend_schema(
+        summary="Qabulni tasdiqlash",
+        request=None,
+        responses={200: AppointmentListSerializer},
+        tags=['Appointments'],
+    )
     @action(detail=True, methods=['post'], url_path='confirm')
     def confirm_appointment(self, request, pk=None):
         """Qabulni tasdiqlash"""
@@ -334,6 +478,12 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         appointment.save()
         return Response(AppointmentListSerializer(appointment).data)
 
+    @extend_schema(
+        summary="Bemor kelmadi deb belgilash",
+        request=None,
+        responses={200: AppointmentListSerializer},
+        tags=['Appointments'],
+    )
     @action(detail=True, methods=['post'], url_path='no-show')
     def no_show(self, request, pk=None):
         """Bemor kelmadi"""
@@ -419,6 +569,12 @@ def _notify_upcoming_appointments_delay(completed_appointment: Appointment, dela
 class DashboardStatsView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Dashboard statistikasi",
+        description="Bugungi, haftalik va oylik qabullar soni, daromad, so'nggi qabullar.",
+        responses={200: DashboardStatsSerializer},
+        tags=['Stats'],
+    )
     def get(self, request):
         today = timezone.localdate()
         week_start = today - timedelta(days=today.weekday())
@@ -479,6 +635,20 @@ class DashboardStatsView(APIView):
 class RevenueStatsView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Daromad statistikasi",
+        description="Kunlik daromad, top shifokorlar va top xizmatlar.",
+        parameters=[
+            OpenApiParameter(
+                name='period', location=OpenApiParameter.QUERY,
+                description='Davr: week | month | year',
+                required=False, type=OpenApiTypes.STR,
+                enum=['week', 'month', 'year'],
+            )
+        ],
+        responses={200: RevenueStatsSerializer},
+        tags=['Stats'],
+    )
     def get(self, request):
         period = request.query_params.get('period', 'week')  # week | month | year
         today = timezone.localdate()
@@ -540,11 +710,22 @@ class RevenueStatsView(APIView):
 class ClinicSettingsView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Klinika sozlamalarini ko'rish",
+        responses={200: ClinicSettingsSerializer},
+        tags=['Settings'],
+    )
     def get(self, request):
         settings_obj = ClinicSettings.get_settings()
         serializer = ClinicSettingsSerializer(settings_obj)
         return Response(serializer.data)
 
+    @extend_schema(
+        summary="Klinika sozlamalarini yangilash",
+        request=ClinicSettingsSerializer,
+        responses={200: ClinicSettingsSerializer},
+        tags=['Settings'],
+    )
     def put(self, request):
         settings_obj = ClinicSettings.get_settings()
         serializer = ClinicSettingsSerializer(settings_obj, data=request.data, partial=True)
@@ -553,12 +734,19 @@ class ClinicSettingsView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        summary="Klinika sozlamalarini qisman yangilash",
+        request=ClinicSettingsSerializer,
+        responses={200: ClinicSettingsSerializer},
+        tags=['Settings'],
+    )
     def patch(self, request):
         return self.put(request)
 
 
 # ─── Telegram Webhook ────────────────────────────────────────────────────────
 
+@extend_schema(exclude=True)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def telegram_webhook(request):
