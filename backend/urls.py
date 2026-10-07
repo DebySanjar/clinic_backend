@@ -6,7 +6,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, HttpResponseRedirect
 from django.views.decorators.http import require_http_methods
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -17,7 +17,6 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
     SpectacularRedocView,
 )
-
 
 @require_http_methods(["GET"])
 def api_root(request):
@@ -45,17 +44,23 @@ def api_root(request):
         }
     })
 
+@require_http_methods(["GET"])
+def root_redirect(request):
+    """Root sahifadan Swagger UI ga yo'naltirish"""
+    return HttpResponseRedirect('/api/docs/')
 
 @require_http_methods(["GET"])
 def favicon_view(request):
     """Empty favicon to prevent 404 errors"""
-    return HttpResponse(status=204)  # No Content
-
+    return HttpResponse(status=204)
 
 urlpatterns = [
+    # Root - Swagger UI ga redirect
+    path('', root_redirect, name='root'),
+
     path('admin/', admin.site.urls),
 
-    # API Root
+    # API Root Info
     path('api/', api_root, name='api-root'),
 
     # Favicon
