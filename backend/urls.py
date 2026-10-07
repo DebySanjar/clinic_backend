@@ -1,4 +1,4 @@
-"""
+﻿"""
 DentFlow — Root URL Configuration
 """
 
@@ -6,6 +6,8 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import JsonResponse, HttpResponse
+from django.views.decorators.http import require_http_methods
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -16,8 +18,48 @@ from drf_spectacular.views import (
     SpectacularRedocView,
 )
 
+
+@require_http_methods(["GET"])
+def api_root(request):
+    """API root endpoint — service info"""
+    return JsonResponse({
+        "service": "DentFlow API",
+        "version": "1.0.0",
+        "status": "operational",
+        "endpoints": {
+            "docs": "/api/docs/",
+            "redoc": "/api/redoc/",
+            "schema": "/api/schema/",
+            "admin": "/admin/",
+            "auth": {
+                "login": "/api/auth/login/",
+                "refresh": "/api/auth/refresh/",
+            },
+            "resources": {
+                "doctors": "/api/doctors/",
+                "services": "/api/services/",
+                "patients": "/api/patients/",
+                "appointments": "/api/appointments/",
+                "stats": "/api/stats/dashboard/",
+            }
+        }
+    })
+
+
+@require_http_methods(["GET"])
+def favicon_view(request):
+    """Empty favicon to prevent 404 errors"""
+    return HttpResponse(status=204)  # No Content
+
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+
+    # API Root
+    path('api/', api_root, name='api-root'),
+
+    # Favicon
+    path('favicon.ico', favicon_view),
 
     # Auth
     path('api/auth/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
