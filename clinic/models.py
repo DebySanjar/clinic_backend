@@ -4,6 +4,7 @@ DentFlow — Clinic Models
 
 from django.db import models
 from django.utils import timezone
+from .survey_models import Survey, Question, SurveyResponse, Answer  # noqa: F401
 
 
 class Doctor(models.Model):

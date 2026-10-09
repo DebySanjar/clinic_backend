@@ -5,8 +5,22 @@ DentFlow — Django Admin konfiguratsiyasi
 from django.contrib import admin
 from .models import (
     Doctor, DoctorLeave, ServiceCategory, Service,
-    Patient, Appointment, ReminderLog, ClinicSettings
+    Patient, Appointment, ReminderLog, ClinicSettings,
+    Survey, Question, SurveyResponse, Answer,
 )
+
+@admin.register(Survey)
+class SurveyAdmin(admin.ModelAdmin):
+    list_display = ['title', 'status', 'response_count', 'created_at']
+    list_filter  = ['status']
+
+@admin.register(Question)
+class QuestionAdmin(admin.ModelAdmin):
+    list_display = ['survey', 'question_text', 'question_type', 'is_required', 'order']
+
+@admin.register(SurveyResponse)
+class SurveyResponseAdmin(admin.ModelAdmin):
+    list_display = ['survey', 'respondent_name', 'submitted_at']
 
 
 @admin.register(Doctor)
