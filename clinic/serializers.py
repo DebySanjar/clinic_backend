@@ -67,7 +67,7 @@ class DoctorListSerializer(serializers.ModelSerializer):
         model = Doctor
         fields = [
             'id', 'first_name', 'last_name', 'full_name',
-            'speciality', 'phone', 'telegram_id', 'photo',
+            'gender', 'speciality', 'phone', 'telegram_id', 'photo',
             'slot_duration', 'work_start', 'work_end',
             'break_start', 'break_end', 'work_days',
             'is_active', 'services', 'today_appointments', 'created_at',
@@ -98,7 +98,7 @@ class DoctorDetailSerializer(serializers.ModelSerializer):
         model = Doctor
         fields = [
             'id', 'first_name', 'last_name', 'full_name',
-            'speciality', 'phone', 'telegram_id', 'photo',
+            'gender', 'speciality', 'phone', 'telegram_id', 'photo',
             'slot_duration', 'work_start', 'work_end',
             'break_start', 'break_end', 'work_days',
             'is_active', 'services', 'service_ids', 'created_at', 'updated_at',

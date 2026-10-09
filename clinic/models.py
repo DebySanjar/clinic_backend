@@ -19,8 +19,14 @@ class Doctor(models.Model):
         (6, 'Yakshanba'),
     ]
 
+    GENDER_CHOICES = [
+        ('male',   'Erkak'),
+        ('female', 'Ayol'),
+    ]
+
     first_name = models.CharField('Ism', max_length=100)
     last_name = models.CharField('Familiya', max_length=100)
+    gender = models.CharField('Jins', max_length=10, choices=GENDER_CHOICES, default='male')
     speciality = models.CharField('Mutaxassislik', max_length=200, default='Stomatolog')
     phone = models.CharField('Telefon', max_length=20, blank=True)
     telegram_id = models.BigIntegerField('Telegram ID', unique=True, null=True, blank=True)
