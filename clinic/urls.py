@@ -28,8 +28,8 @@ urlpatterns = [
     # Surveys — public (no auth)
     path('public/survey/<uuid:slug>/', PublicSurveyView.as_view(), name='public-survey'),
 
-    # Applicants
-    path('surveys/applicants/', ApplicantsView.as_view(), name='applicants'),
+    # Applicants — alohida endpoint (router conflict oldini olish uchun)
+    path('survey-applicants/', ApplicantsView.as_view(), name='applicants'),
 
     # Telegram webhook
     path('bot/webhook/', views.telegram_webhook, name='telegram-webhook'),
