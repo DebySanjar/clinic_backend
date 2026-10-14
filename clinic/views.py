@@ -107,7 +107,12 @@ def generate_slots(doctor: Doctor, target_date: date) -> list:
 )
 class DoctorViewSet(viewsets.ModelViewSet):
     queryset = Doctor.objects.filter(is_active=True).prefetch_related('services')
-    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        # list va slots — hamma ko'ra olsin (bot WebApp uchun)
+        if self.action in ['list', 'retrieve', 'slots', 'leaves']:
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
     def get_serializer_class(self):
         if self.action in ['list']:
@@ -246,6 +251,11 @@ class ServiceCategoryViewSet(viewsets.ModelViewSet):
 class ServiceViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
     def get_serializer_class(self):
         if self.action == 'retrieve':
             return ServiceDetailSerializer
@@ -287,7 +297,12 @@ class ServiceViewSet(viewsets.ModelViewSet):
 )
 class PatientViewSet(viewsets.ModelViewSet):
     serializer_class = PatientSerializer
-    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        # Bot dan kelgan so'rovlar uchun ruxsat
+        if self.action in ['list', 'retrieve', 'create', 'update', 'partial_update', 'appointments']:
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
     def get_queryset(self):
         qs = Patient.objects.all()
@@ -341,7 +356,12 @@ class PatientViewSet(viewsets.ModelViewSet):
     destroy=extend_schema(summary="Qabulni o'chirish", tags=['Appointments']),
 )
 class AppointmentViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        # Bot foydalanuvchilar qabul yaratishi va o'z qabullarini ko'rishi mumkin
+        if self.action in ['list', 'retrieve', 'create', 'cancel_appointment']:
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
     def get_serializer_class(self):
         if self.action == 'create':
