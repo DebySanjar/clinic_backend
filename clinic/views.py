@@ -122,8 +122,11 @@ class DoctorViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         qs = Doctor.objects.prefetch_related('services')
         is_active = self.request.query_params.get('is_active')
+        service_id = self.request.query_params.get('service_id')
         if is_active is not None:
             qs = qs.filter(is_active=is_active.lower() == 'true')
+        if service_id:
+            qs = qs.filter(services__id=service_id).distinct()
         return qs
 
     @extend_schema(
